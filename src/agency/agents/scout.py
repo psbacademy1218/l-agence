@@ -29,7 +29,7 @@ from .base import AgentResult, voice
 
 UA = "AgenceAutonome/1.0 (+https://example.com; prospection responsable)"
 OVERPASS = ["https://overpass-api.de/api/interpreter",
-            "https://overpass.kumi.systems/api/interpreter"]
+            "https://overpass.openstreetmap.fr/api/interpreter"]
 
 # Secteur (saisi par l'utilisateur) -> filtre OpenStreetMap
 SECTOR_TAGS = {
@@ -238,18 +238,19 @@ def _extract_content(html: str) -> dict:
 # DÉCOUVERTE RÉELLE (OpenStreetMap / Overpass)
 # --------------------------------------------------------------------------- #
 def _overpass(query: str) -> list:
+    # On renvoie la PREMIÈRE réponse reçue (même vide) : on ne change de miroir
+    # qu'en cas d'ERREUR/timeout, jamais sur un résultat vide. Évite les attentes
+    # cumulées quand un miroir est lent.
     data = urllib.parse.urlencode({"data": query}).encode()
     for ep in OVERPASS:
         try:
             req = urllib.request.Request(ep, data=data,
                                          headers={"User-Agent": UA, "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                els = json.loads(r.read()).get("elements", [])
-            if els:
-                return els
+            with urllib.request.urlopen(req, timeout=14) as r:
+                return json.loads(r.read()).get("elements", [])
         except Exception:
             continue
-    return []
+    return None  # tous les miroirs en échec (Overpass injoignable)
 
 
 def _craft_from_tags(t: dict) -> str:
@@ -291,20 +292,23 @@ def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
     tag = SECTOR_TAGS.get(s)
     if tag:
         craft, industry = SECTOR_LABEL.get(tag, (sector, "commerce de détail"))
-        q = (f'[out:json][timeout:25];area["name"="{city}"]["boundary"="administrative"]->.a;'
+        q = (f'[out:json][timeout:18];area["name"="{city}"]["boundary"="administrative"]->.a;'
              f'( nwr[{tag}]["website"](area.a); nwr[{tag}]["contact:website"](area.a); );'
              f'out tags center {limit * 3};')
-        out = _build(_overpass(q), city, craft, industry, limit)
+        els = _overpass(q)
+        if els is None:           # Overpass injoignable : on abandonne vite
+            return []
+        out = _build(els, city, craft, industry, limit)
         if out:
             return out
     # Secteur inconnu OU aucun résultat ciblé : recherche générique (toute
     # entreprise locale avec site web ; métier déduit par établissement).
-    q = (f'[out:json][timeout:25];area["name"="{city}"]["boundary"="administrative"]->.a;'
+    q = (f'[out:json][timeout:18];area["name"="{city}"]["boundary"="administrative"]->.a;'
          f'( nwr["shop"]["website"](area.a); nwr["office"]["website"](area.a);'
-         f' nwr["craft"]["website"](area.a); nwr["amenity"]["website"](area.a);'
-         f' nwr["leisure"]["website"](area.a); );'
-         f'out tags center {limit * 5};')
-    return _build(_overpass(q), city, None, sector or "entreprise", limit)
+         f' nwr["craft"]["website"](area.a); );'
+         f'out tags center {limit * 3};')
+    els = _overpass(q)
+    return _build(els, city, None, sector or "entreprise", limit) if els else []
 
 
 # --------------------------------------------------------------------------- #
