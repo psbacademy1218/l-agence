@@ -5,11 +5,15 @@
 const $ = (s, r = document) => r.querySelector(s);
 const api = (p, opts) => fetch(p, opts).then(r => r.json());
 const PIPE_LABELS = {
-  scout: "Détecte & qualifie", closer: "Rédige l'approche",
-  strategist: "Cadre la mission", designer: "Direction artistique",
-  copywriter: "Contenu sur-mesure", builder: "Code le site",
-  inspector: "Contrôle qualité", optimizer: "SEO technique",
-  launcher: "Déploie & vérifie",
+  scout: "Détecte & qualifie", hunter: "Qualifie le lead",
+  chercheur: "Recherche client", closer: "Rédige l'approche",
+  strategist: "Cadre la mission", positionneur: "Trouve l'angle",
+  designer: "Direction artistique", illustrateur: "Brief visuel",
+  copywriter: "Contenu sur-mesure", relecteur: "Relit le contenu",
+  builder: "Code le site", inspector: "Contrôle qualité",
+  optimizer: "SEO technique", launcher: "Déploie & vérifie",
+  referenceur: "Plan SEO", publicitaire: "Annonces", social: "Calendrier social",
+  automatiseur: "Automatisations",
 };
 const STATE_FR = { pending: "en attente", running: "en action…", passed: "terminé",
   failed: "échec", skipped: "ignoré" };

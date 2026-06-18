@@ -30,14 +30,23 @@ from .state import PIPELINE, RunState
 # --------------------------------------------------------------------------- #
 POLICY: dict[str, dict] = {
     "scout":      {"min_score": 60, "max_attempts": 2, "blocking": True},
+    "hunter":     {"min_score": 50, "max_attempts": 1, "blocking": False},
+    "chercheur":  {"min_score": 50, "max_attempts": 1, "blocking": False},
     "closer":     {"min_score": 70, "max_attempts": 3, "blocking": True},
     "strategist": {"min_score": 70, "max_attempts": 2, "blocking": True},
+    "positionneur": {"min_score": 50, "max_attempts": 1, "blocking": False},
     "designer":   {"min_score": 70, "max_attempts": 3, "blocking": True},
+    "illustrateur": {"min_score": 50, "max_attempts": 1, "blocking": False},
     "copywriter": {"min_score": 70, "max_attempts": 3, "blocking": True},
+    "relecteur":  {"min_score": 50, "max_attempts": 1, "blocking": False},
     "builder":    {"min_score": 70, "max_attempts": 3, "blocking": True},
     "inspector":  {"min_score": 85, "max_attempts": 1, "blocking": True},
     "optimizer":  {"min_score": 75, "max_attempts": 2, "blocking": True},
     "launcher":   {"min_score": 80, "max_attempts": 2, "blocking": True},
+    "referenceur": {"min_score": 50, "max_attempts": 1, "blocking": False},
+    "publicitaire": {"min_score": 50, "max_attempts": 1, "blocking": False},
+    "social":     {"min_score": 50, "max_attempts": 1, "blocking": False},
+    "automatiseur": {"min_score": 50, "max_attempts": 1, "blocking": False},
 }
 
 # Boucle QA : si l'Inspector refuse, qui re-travaille, et combien de tours max.
@@ -144,9 +153,11 @@ class Manager:
             f"Nouvelle mission « {self.run.client.get('name')} ». "
             f"Je découpe en {len(PIPELINE)} étapes et j'assigne l'équipe.")
 
-        # 1) Prospection (audit approfondi du prospect retenu)
+        # 1) Prospection (audit approfondi + qualification + recherche client)
         if not self._must_pass("scout"):
             return self._abort("Audit prospect impossible.")
+        self.run_stage("hunter")       # qualification commerciale (non bloquant)
+        self.run_stage("chercheur")    # recherche client (non bloquant)
 
         # 2) Outreach (brouillon d'email — jamais envoyé)
         if not self._must_pass("closer"):
@@ -163,23 +174,40 @@ class Manager:
             return True
         self.announce("✱ Le prospect a accepté la proposition. Lancement de la production.")
 
-        # 4) Production
-        for stage in ("strategist", "designer", "copywriter", "builder"):
-            if not self._must_pass(stage):
-                return self._abort(f"Étape de production « {stage} » en échec.")
+        # 4) Cadrage + positionnement
+        if not self._must_pass("strategist"):
+            return self._abort("Cadrage en échec.")
+        self.run_stage("positionneur")     # angle / promesse (non bloquant)
 
-        # 5) Boucle QA (Inspector + reprises)
+        # 5) Création (DA + visuels + contenu + relecture)
+        if not self._must_pass("designer"):
+            return self._abort("Direction artistique en échec.")
+        self.run_stage("illustrateur")     # brief visuel (non bloquant)
+        if not self._must_pass("copywriter"):
+            return self._abort("Rédaction du contenu en échec.")
+        self.run_stage("relecteur")        # relecture (non bloquant)
+
+        # 6) Construction
+        if not self._must_pass("builder"):
+            return self._abort("Construction du site en échec.")
+
+        # 7) Boucle QA (Inspector + reprises)
         qa = self.quality_loop()
         if not (qa.ok and qa.score >= POLICY["inspector"]["min_score"]):
             return self._abort("Le site n'a pas franchi le contrôle qualité.")
 
-        # 6) Optimisation (SEO, sitemap, données structurées, tracking)
+        # 8) Optimisation (SEO technique, sitemap, données structurées, tracking)
         if not self._must_pass("optimizer"):
             return self._abort("Optimisation en échec.")
 
-        # 7) Lancement (build + déploiement local + vérification)
+        # 9) Lancement (build + déploiement local + vérification)
         if not self._must_pass("launcher"):
             return self._abort("Déploiement en échec.")
+
+        # 10) Croissance — livrables post-lancement (non bloquants)
+        self.announce("Le site est en ligne. L'équipe croissance prépare les livrables.")
+        for stage in ("referenceur", "publicitaire", "social", "automatiseur"):
+            self.run_stage(stage)
 
         self.run.status = "delivered"
         self.run.save()

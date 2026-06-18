@@ -20,14 +20,23 @@ from . import utils
 # le Manager itère sur cette liste, rien d'autre n'est à modifier.
 PIPELINE = [
     ("scout", "🔍 Scout"),
+    ("hunter", "🏹 Hunter"),
+    ("chercheur", "🔬 Chercheur"),
     ("closer", "✍️  Closer"),
     ("strategist", "🎯 Strategist"),
+    ("positionneur", "🧲 Positionneur"),
     ("designer", "🎨 Designer"),
+    ("illustrateur", "🖌️  Illustrateur"),
     ("copywriter", "🖊️  Copywriter"),
+    ("relecteur", "🧐 Relecteur"),
     ("builder", "💻 Builder"),
     ("inspector", "🔎 Inspector"),
     ("optimizer", "📈 Optimizer"),
     ("launcher", "🚀 Launcher"),
+    ("referenceur", "🔗 Référenceur"),
+    ("publicitaire", "📣 Publicitaire"),
+    ("social", "💬 Social"),
+    ("automatiseur", "⚙️  Automate"),
 ]
 
 

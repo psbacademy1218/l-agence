@@ -194,6 +194,14 @@ img,svg{max-width:100%;height:auto;display:block}
 .pillar h3{font-size:var(--step-1)}
 .pillar p{color:var(--muted);margin:0;font-size:var(--step-0)}
 
+/* engagements */
+.engagements{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.2rem}
+.engage{display:flex;gap:.8rem;align-items:flex-start;padding:1.3rem 1.2rem;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.engage__ic{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent);color:var(--on-accent);font-weight:700;font-size:.95rem}
+.engage h3{font-size:var(--step-1);margin:.15em 0 0}
+
 /* réalisations */
 .reals{display:flex;flex-direction:column}
 .real{display:grid;grid-template-columns:auto 1fr auto;gap:1.4rem;align-items:center;
@@ -306,7 +314,7 @@ def _render_css(design: dict) -> str:
 # --------------------------------------------------------------------------- #
 # Génération du HTML
 # --------------------------------------------------------------------------- #
-def _render_html(design: dict, copy: dict, rev: int) -> str:
+def _render_html(design: dict, copy: dict, rev: int, positioning: dict | None = None) -> str:
     p = design["palette"]
     typo = design["typography"]
     grain = " grain" if design["tokens"]["texture"] == "grain" else ""
@@ -339,6 +347,20 @@ def _render_html(design: dict, copy: dict, rev: int) -> str:
 
     c = copy["contact"]
     monogram = _svg_monogram(copy["brand"]["monogram"], p["ink"], p["accent"])
+
+    # Section "Nos engagements" alimentée par le Positionneur (différenciateurs).
+    diffs = (positioning or {}).get("differentiators", [])
+    engagements = ""
+    if diffs:
+        cards = "".join(
+            f'<div class="engage" data-reveal><span class="engage__ic" aria-hidden="true">✓</span>'
+            f'<h3>{d}</h3></div>' for d in diffs[:3])
+        engagements = (
+            '<section class="section" id="engagements"><div class="container">'
+            '<div class="section__head"><span class="section__num">02</span>'
+            '<span class="section__label">Nos engagements</span>'
+            '<span class="section__rule"></span></div>'
+            f'<div class="engagements">{cards}</div></div></section>')
 
     head = f"""<!doctype html>
 <html lang="fr">
@@ -391,22 +413,23 @@ def _render_html(design: dict, copy: dict, rev: int) -> str:
 <div class="pillars">{pillars}</div>
 </div></section>
 
+{engagements}
 <section class="section" id="realisations"><div class="container">
-<div class="section__head"><span class="section__num">02</span>
+<div class="section__head"><span class="section__num">03</span>
 <span class="section__label">{rl['label']}</span><span class="section__rule"></span></div>
 <h2>{rl['title']}</h2><p class="lead">{rl['intro']}</p>
 <div class="reals">{reals}</div>
 </div></section>
 
 <section class="section" id="atelier"><div class="container">
-<div class="section__head"><span class="section__num">03</span>
+<div class="section__head"><span class="section__num">04</span>
 <span class="section__label">{at['label']}</span><span class="section__rule"></span></div>
 <div class="atelier__grid"><div><h2>{at['title']}</h2>{para}</div>
 <dl class="facts">{facts}</dl></div>
 </div></section>
 
 <section class="section" id="contact"><div class="container">
-<div class="section__head"><span class="section__num">04</span>
+<div class="section__head"><span class="section__num">05</span>
 <span class="section__label">{c['label']}</span><span class="section__rule"></span></div>
 <div class="contact__grid">
 <div><h2>{c['title']}</h2><p class="lead">{c['intro']}</p>
@@ -510,7 +533,7 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
     out = utils.DELIVERABLES_DIR / slug
     src = out / "src"
 
-    html = _render_html(design, copy, rev)
+    html = _render_html(design, copy, rev, run.get("positioning", {}))
     css = _render_css(design)
     js = _render_js()
     legal = _render_legal(copy, client)

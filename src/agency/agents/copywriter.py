@@ -37,7 +37,7 @@ VALUE_PILLARS = {
 }
 
 
-def _pillars(client: dict, extracted: dict) -> list[dict]:
+def _pillars(client: dict, extracted: dict, positioning: dict | None = None) -> list[dict]:
     craft = (client.get("craft") or "").lower()
     if "ébéniste" in craft or "menuisier" in craft:
         keys = ["bois massif local", "sur-mesure", "patience", "restauration du patrimoine"]
@@ -55,6 +55,14 @@ def _pillars(client: dict, extracted: dict) -> list[dict]:
         if 3 < len(h) < 60:
             pillars.append({"title": h, "body":
                 f"Un point fort de {client.get('name','la maison')}, mis en avant clairement."})
+
+    # puis sur les différenciateurs trouvés par le Positionneur
+    for d in (positioning or {}).get("differentiators", []):
+        if len(pillars) >= 3:
+            break
+        if not any(p["title"].lower() == d.lower() for p in pillars):
+            pillars.append({"title": d,
+                            "body": "Un engagement concret, tenu sur chaque projet."})
 
     metier = client.get("craft") or "notre métier"
     generic = [
@@ -145,7 +153,7 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
                + ". On fait les choses avec soin, on répond vite, et on tient ce qu'on promet. "
                  "Découvrez ce que nous pouvons faire pour vous.")
 
-    pillars = _pillars(client, extracted)
+    pillars = _pillars(client, extracted, run.get("positioning", {}))
     services = _services(client, extracted)
     about_text = (client.get("about") or real_desc
                   or f"{name_short} accompagne ses clients{(' à ' + city) if city else ''} "
