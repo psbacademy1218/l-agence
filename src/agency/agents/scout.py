@@ -237,6 +237,14 @@ def _extract_content(html: str) -> dict:
 # --------------------------------------------------------------------------- #
 # DÉCOUVERTE RÉELLE (OpenStreetMap / Overpass)
 # --------------------------------------------------------------------------- #
+_OVERPASS_UNREACHABLE = False
+
+
+def overpass_unreachable() -> bool:
+    """Vrai si la dernière découverte n'a pu joindre aucun miroir Overpass."""
+    return _OVERPASS_UNREACHABLE
+
+
 def _overpass(query: str) -> list:
     # On renvoie la PREMIÈRE réponse reçue (même vide) : on ne change de miroir
     # qu'en cas d'ERREUR/timeout, jamais sur un résultat vide. Évite les attentes
@@ -288,6 +296,8 @@ def _build(elements: list, city: str, craft, industry, limit: int) -> list[dict]
 
 
 def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
+    global _OVERPASS_UNREACHABLE
+    _OVERPASS_UNREACHABLE = False
     s = (sector or "").strip().lower()
     tag = SECTOR_TAGS.get(s)
     if tag:
@@ -297,6 +307,7 @@ def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
              f'out tags center {limit * 3};')
         els = _overpass(q)
         if els is None:           # Overpass injoignable : on abandonne vite
+            _OVERPASS_UNREACHABLE = True
             return []
         out = _build(els, city, craft, industry, limit)
         if out:
@@ -308,7 +319,10 @@ def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
          f' nwr["craft"]["website"](area.a); );'
          f'out tags center {limit * 3};')
     els = _overpass(q)
-    return _build(els, city, None, sector or "entreprise", limit) if els else []
+    if els is None:
+        _OVERPASS_UNREACHABLE = True
+        return []
+    return _build(els, city, None, sector or "entreprise", limit)
 
 
 # --------------------------------------------------------------------------- #

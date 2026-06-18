@@ -89,10 +89,15 @@ class Controller:
                 self.note = f"Prospection en cours : {sector or 'tous secteurs'} à {city}…"
                 res = scout.qualify_live(city, sector, limit=10)
                 utils.write_json(utils.STATE_DIR / "prospects.json", res)
-                self.note = (f"{len(res)} prospect(s) trouvé(s) à {city}. Choisis-en un ci-dessous."
-                             if res else
-                             f"Aucun prospect (avec site web) trouvé pour « {sector} » à {city}. "
-                             f"Essaie une ville plus grande, un autre secteur, ou « Mission sur une URL ».")
+                if res:
+                    self.note = f"{len(res)} prospect(s) trouvé(s) à {city}. Choisis-en un ci-dessous."
+                elif scout.overpass_unreachable():
+                    self.note = ("Annuaire OpenStreetMap injoignable depuis le serveur "
+                                 "(les API publiques limitent les hébergeurs cloud). "
+                                 "Utilise « Mission sur une URL » — ça fonctionne parfaitement.")
+                else:
+                    self.note = (f"Aucun prospect avec site web trouvé pour « {sector} » à {city}. "
+                                 "Essaie une autre ville/secteur, ou « Mission sur une URL ».")
             elif command == "mission_url":
                 # MISSION DIRECTE sur une vraie URL
                 url = arg.get("url") if isinstance(arg, dict) else arg
