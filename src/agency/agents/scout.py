@@ -14,6 +14,7 @@ du simulé au réel est transparent.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import re
 import socket
@@ -94,7 +95,7 @@ def _normalize(url: str) -> str:
 # AUDIT RÉEL d'un site
 # --------------------------------------------------------------------------- #
 def audit_url(url: str, deep: bool = False) -> dict:
-    socket.setdefaulttimeout(15)
+    socket.setdefaulttimeout(9)
     url = _normalize(url)
     res = {"reachable": False, "url": url, "signals": {}, "extracted": {}}
     if not url:
@@ -103,12 +104,12 @@ def audit_url(url: str, deep: bool = False) -> dict:
     page = None
     https = url.startswith("https://")
     try:
-        page = _fetch(url, timeout=12)
+        page = _fetch(url, timeout=8)
         https = page["final_url"].startswith("https://")
     except Exception:
         # tentative en http si https échoue
         try:
-            page = _fetch("http://" + url.split("://", 1)[1], timeout=10)
+            page = _fetch("http://" + url.split("://", 1)[1], timeout=7)
             https = False
         except Exception:
             return res
@@ -145,13 +146,15 @@ def audit_url(url: str, deep: bool = False) -> dict:
     if years:
         sig["last_updated_year"] = max(years)
 
-    # sitemap & favicon
-    try:
-        base = "{0.scheme}://{0.netloc}".format(urllib.parse.urlsplit(page["final_url"]))
-        sm = _fetch(base + "/sitemap.xml", timeout=6, method="HEAD")
-        sig["sitemap"] = sm["status"] == 200
-    except Exception:
-        sig["sitemap"] = False
+    # sitemap (requête HTTP supplémentaire) — seulement en audit profond
+    sig["sitemap"] = False
+    if deep:
+        try:
+            base = "{0.scheme}://{0.netloc}".format(urllib.parse.urlsplit(page["final_url"]))
+            sm = _fetch(base + "/sitemap.xml", timeout=4, method="HEAD")
+            sig["sitemap"] = sm["status"] == 200
+        except Exception:
+            sig["sitemap"] = False
     sig["favicon"] = ("rel=\"icon\"" in low or "rel='icon'" in low or "shortcut icon" in low)
     sig["contact_form"] = ("<form" in low)
 
@@ -342,18 +345,27 @@ def qualify_pool() -> list[dict]:
 
 
 def qualify_live(city: str, sector: str, limit: int = 10) -> list[dict]:
-    """Prospection RÉELLE : découverte + audit + classement."""
+    """Prospection RÉELLE : découverte + audit (en parallèle) + classement."""
     prospects = discover(city, sector, limit=limit)
+
+    def audit_one(p: dict) -> dict:
+        try:
+            a = audit_url(p["url"], deep=False)
+            if a["reachable"]:
+                p["signals"] = a["signals"]
+                if a["extracted"].get("description") and not p.get("about"):
+                    p["about"] = a["extracted"]["description"]
+                p["_extracted"] = a["extracted"]
+        except Exception:
+            pass
+        return _entry(p, diagnose(p))
+
+    # Les audits sont des attentes réseau : on les fait simultanément (≈1 audit
+    # au lieu de N en série → quelques secondes au lieu de plusieurs minutes).
     out = []
-    for p in prospects:
-        a = audit_url(p["url"], deep=False)
-        if a["reachable"]:
-            p["signals"] = a["signals"]
-            if a["extracted"].get("description") and not p.get("about"):
-                p["about"] = a["extracted"]["description"]
-            p["_extracted"] = a["extracted"]
-        diag = diagnose(p)
-        out.append(_entry(p, diag))
+    if prospects:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            out = list(ex.map(audit_one, prospects))
     out.sort(key=lambda x: x["opportunity_score"], reverse=True)
     return out
 
@@ -368,7 +380,9 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
           if url else "aucun site existant : j'évalue le potentiel de présence en ligne…")
 
     extracted = {}
-    if url and not client.get("_audited"):
+    # On n'audite en direct que si on n'a pas déjà les signaux (vivier/démo =
+    # signaux fournis → pas d'attente réseau inutile).
+    if url and not client.get("signals") and not client.get("_audited"):
         a = audit_url(url, deep=True)
         if a["reachable"]:
             client["signals"] = a["signals"]
