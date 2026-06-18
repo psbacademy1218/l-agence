@@ -45,20 +45,23 @@ def _extract_json(text: str):
     return json.loads(text)
 
 
-def websearch_json(agent_key: str, task: str, max_tokens: int = 4000):
+def websearch_json(agent_key: str, task: str, max_tokens: int = 3000):
     """Recherche web réelle (outil web_search) + sortie JSON. Pour trouver de
-    vraies entités (entreprises…) depuis le cloud, là où Overpass est bloqué."""
+    vraies entités (entreprises…) depuis le cloud, là où Overpass est bloqué.
+    Borné (timeout + 2 tours) pour rester réactif."""
     if not available() or os.environ.get("AGENCY_WEB_SEARCH", "1") not in ("1", "true", "True"):
         return None
     try:
         import anthropic
-        client = anthropic.Anthropic()
+        client = anthropic.Anthropic(timeout=90.0)
         system = (_persona_prompt(agent_key) + "\n\nUtilise la recherche web pour des "
-                  "informations RÉELLES et à jour. Termine par le JSON demandé, sans texte autour.")
+                  "informations RÉELLES et à jour, en 1 à 2 recherches maximum. "
+                  "Termine par le JSON demandé, sans texte autour.")
         msgs = [{"role": "user", "content": task}]
-        tools = [{"type": "web_search_20260209", "name": "web_search"}]
+        tools = [{"type": "web_search_20260209", "name": "web_search",
+                  "max_uses": 3}]
         resp = None
-        for _ in range(4):
+        for _ in range(2):
             resp = client.messages.create(model=MODEL, max_tokens=max_tokens,
                                           system=system, messages=msgs, tools=tools)
             if getattr(resp, "stop_reason", "") == "pause_turn":
@@ -136,13 +139,14 @@ def agent_research(agent_key: str, query: str, max_tokens: int = 3500) -> str:
         return ""
     try:
         import anthropic
-        client = anthropic.Anthropic()
+        client = anthropic.Anthropic(timeout=60.0)
         system = _persona_prompt(agent_key) + ("\n\nUtilise la recherche web pour des faits "
-            "récents et locaux. Termine par une synthèse factuelle en français (puces).")
+            "récents et locaux, en 1 à 2 recherches maximum. Termine par une synthèse "
+            "factuelle en français (puces).")
         msgs = [{"role": "user", "content": query}]
-        tools = [{"type": "web_search_20260209", "name": "web_search"}]
+        tools = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}]
         resp = None
-        for _ in range(3):  # gère les pause_turn de l'outil serveur
+        for _ in range(2):  # gère les pause_turn de l'outil serveur
             resp = client.messages.create(model=MODEL, max_tokens=max_tokens,
                                           system=system, messages=msgs, tools=tools)
             if getattr(resp, "stop_reason", "") == "pause_turn":

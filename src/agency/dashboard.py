@@ -86,7 +86,8 @@ class Controller:
                 # PROSPECTION RÉELLE : ville + secteur via OpenStreetMap + audit live
                 city = (arg or {}).get("city", "").strip()
                 sector = (arg or {}).get("sector", "").strip()
-                self.note = f"Prospection en cours : {sector or 'tous secteurs'} à {city}…"
+                self.note = (f"Prospection IA en cours pour « {sector or 'tous secteurs'} » "
+                             f"à {city} (recherche web réelle, ~1 à 2 min)…")
                 res = scout.qualify_live(city, sector, limit=10)
                 utils.write_json(utils.STATE_DIR / "prospects.json", res)
                 if res:
