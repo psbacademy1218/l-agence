@@ -234,6 +234,18 @@ class Handler(BaseHTTPRequestHandler):
                 {"ok": ok, "message": msg,
                  "current_run_id": CONTROLLER.current_run_id},
                 202 if ok else 409)
+        if u.path == "/api/reset":
+            # Remet à zéro l'affichage : pilote au repos + prospects vidés.
+            CONTROLLER.active = False
+            CONTROLLER.command = None
+            CONTROLLER.current_run_id = None
+            CONTROLLER.note = None
+            CONTROLLER.error = None
+            try:
+                utils.write_json(utils.STATE_DIR / "prospects.json", [])
+            except Exception:
+                pass
+            return self._json({"ok": True})
         self._send(404, "text/plain; charset=utf-8", b"404")
 
     # -- données ------------------------------------------------------- #
@@ -295,12 +307,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def _state(self, qs: dict) -> dict:
         run_id = (qs.get("run") or [None])[0] or CONTROLLER.current_run_id
-        run = None
+        if not run_id:                       # rien en cours -> écran propre (après reset)
+            return {"run": None, "controller": CONTROLLER.status()}
         try:
-            run = state.load_run(run_id) if run_id else state.latest_run()
+            run = state.load_run(run_id)
         except Exception:
-            run = state.latest_run()
-        if run is None:
             return {"run": None, "controller": CONTROLLER.status()}
         d = run.to_dict()
         d["slug"] = utils.slugify(run.client.get("name", "client"))

@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
 
@@ -384,6 +384,42 @@ def _entry(p: dict, diag: dict) -> dict:
             "qualified": diag["qualified"], "raw": p, "diagnostic": diag}
 
 
+def discover_ai(city: str, sector: str, limit: int = 10) -> list | None:
+    """Découverte via la recherche web de Claude (cible bien, marche en cloud).
+    Retourne None si l'IA est indisponible/échoue → repli Overpass."""
+    if not llm.available():
+        return None
+    task = (f"Trouve jusqu'à {limit} entreprises de type « {sector or 'commerce/service local'} » "
+            f"situées à {city} (et ses environs immédiats) qui possèdent leur PROPRE site web "
+            "officiel — pas un annuaire, pas une page Facebook/Instagram, pas une plateforme de "
+            "réservation tierce. Pour chacune, donne le nom exact et l'URL de son site. "
+            'Réponds UNIQUEMENT par un tableau JSON : '
+            '[{"name":"...","url":"https://...","address":"..."}].')
+    data = llm.websearch_json("scout", task)
+    if not isinstance(data, list):
+        return None
+    out, seen = [], set()
+    for it in data:
+        if not isinstance(it, dict):
+            continue
+        url = (it.get("url") or "").strip()
+        name = (it.get("name") or "").strip()
+        if not url or not name:
+            continue
+        host = urllib.parse.urlsplit(_normalize(url)).netloc.replace("www.", "")
+        if not host or host in seen:
+            continue
+        seen.add(host)
+        out.append({"name": name, "url": url,
+                    "industry": sector or "entreprise", "craft": sector or "entreprise",
+                    "location": (it.get("address") or city),
+                    "contact": {"name": "", "role": "", "email": ""},
+                    "values": [], "about": "", "signals": {}})
+        if len(out) >= limit:
+            break
+    return out
+
+
 def client_from_url(url: str) -> dict:
     """Construit une fiche client à partir d'une vraie URL (pour une mission directe)."""
     a = audit_url(url, deep=False)
@@ -407,8 +443,11 @@ def qualify_pool() -> list[dict]:
 
 
 def qualify_live(city: str, sector: str, limit: int = 10) -> list[dict]:
-    """Prospection RÉELLE : découverte + audit (en parallèle) + classement."""
-    prospects = discover(city, sector, limit=limit)
+    """Prospection RÉELLE : découverte (IA web search en priorité, sinon Overpass)
+    + audit (en parallèle) + classement."""
+    prospects = discover_ai(city, sector, limit=limit)
+    if not prospects:                       # repli Overpass (local / hors IA)
+        prospects = discover(city, sector, limit=limit)
 
     def audit_one(p: dict) -> dict:
         try:

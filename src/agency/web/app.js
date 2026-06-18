@@ -193,7 +193,7 @@ async function tick() {
     const data = await api("/api/state");
     const run = data.run, ctrl = data.controller || {};
     busy = !!ctrl.active;
-    document.querySelectorAll(".controls .btn, .prospect button, .nm button")
+    document.querySelectorAll(".controls .btn:not(.btn--always), .prospect button, .nm button")
       .forEach(b => { b.disabled = busy; });
     setPill(run, ctrl);
     updateAgents(run); updatePipeline(run); updateHub(run, ctrl);
@@ -212,7 +212,7 @@ async function launch(command, arg) {
   if (busy) return;
   const pace = $("#pace").value;
   busy = true;
-  document.querySelectorAll(".controls .btn, .prospect button, .nm button").forEach(b => b.disabled = true);
+  document.querySelectorAll(".controls .btn:not(.btn--always), .prospect button, .nm button").forEach(b => b.disabled = true);
   await api("/api/launch", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ command, arg, pace }),
@@ -226,8 +226,14 @@ async function init() {
   PIPE_KEYS = TEAM.filter(p => p.key !== "manager").map(p => p.key);
   renderTeam(); renderPipelineSkeleton();
   try { renderProspects(await api("/api/prospects")); } catch (e) {}
-  document.querySelectorAll(".controls .btn").forEach(b =>
+  document.querySelectorAll(".controls .btn[data-cmd]").forEach(b =>
     b.addEventListener("click", () => launch(b.dataset.cmd)));
+  const rb = document.getElementById("btn-reset");
+  if (rb) rb.addEventListener("click", async () => {
+    await fetch("/api/reset", { method: "POST" }).catch(() => {});
+    busy = false;
+    setTimeout(tick, 150);
+  });
   const pf = document.getElementById("nm-prospect");
   if (pf) pf.addEventListener("submit", (e) => {
     e.preventDefault();

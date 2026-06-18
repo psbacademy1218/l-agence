@@ -31,15 +31,46 @@ def available() -> bool:
         return False
 
 
-def _extract_json(text: str) -> dict:
+def _extract_json(text: str):
     text = (text or "").strip()
     if text.startswith("```"):                       # enlève les ```json … ```
         text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
         text = re.sub(r"\n?```$", "", text).strip()
-    i, j = text.find("{"), text.rfind("}")
-    if i != -1 and j != -1 and j > i:
-        text = text[i:j + 1]
+    a, b = text.find("["), text.rfind("]")           # objet OU tableau
+    o, c = text.find("{"), text.rfind("}")
+    if a != -1 and b > a and (o == -1 or a < o):
+        text = text[a:b + 1]
+    elif o != -1 and c > o:
+        text = text[o:c + 1]
     return json.loads(text)
+
+
+def websearch_json(agent_key: str, task: str, max_tokens: int = 4000):
+    """Recherche web réelle (outil web_search) + sortie JSON. Pour trouver de
+    vraies entités (entreprises…) depuis le cloud, là où Overpass est bloqué."""
+    if not available() or os.environ.get("AGENCY_WEB_SEARCH", "1") not in ("1", "true", "True"):
+        return None
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        system = (_persona_prompt(agent_key) + "\n\nUtilise la recherche web pour des "
+                  "informations RÉELLES et à jour. Termine par le JSON demandé, sans texte autour.")
+        msgs = [{"role": "user", "content": task}]
+        tools = [{"type": "web_search_20260209", "name": "web_search"}]
+        resp = None
+        for _ in range(4):
+            resp = client.messages.create(model=MODEL, max_tokens=max_tokens,
+                                          system=system, messages=msgs, tools=tools)
+            if getattr(resp, "stop_reason", "") == "pause_turn":
+                msgs.append({"role": "assistant", "content": resp.content})
+                continue
+            break
+        txt = "".join(getattr(b, "text", "") for b in resp.content
+                      if getattr(b, "type", "") == "text")
+        return _extract_json(txt) if txt else None
+    except Exception as exc:
+        utils.say(f"   [IA:{agent_key}] recherche+JSON KO : {exc}")
+        return None
 
 
 def _text_of(resp) -> str:
