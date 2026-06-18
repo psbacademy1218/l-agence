@@ -102,8 +102,10 @@ class Controller:
                 self.current_run_id = run.run_id
                 Manager(run).deliver()
             elif command in ("demo", "accept"):
-                q = _current_prospects()
-                raw = q[0]["raw"] if command == "demo" else self._select(q, arg)
+                if command == "demo":                       # vitrine : toujours le vivier
+                    raw = scout.qualify_pool()[0]["raw"]
+                else:                                       # le prospect choisi par l'utilisateur
+                    raw = self._select(_current_prospects() or scout.qualify_pool(), arg)
                 client = dict(raw)
                 client["accepted"] = True
                 run = state.new_run(client)
@@ -138,7 +140,7 @@ def _current_prospects() -> list:
     f = utils.STATE_DIR / "prospects.json"
     if f.exists():
         data = utils.read_json_safe(f)
-        if data:
+        if data is not None:        # respecte une liste vide (prospection sans résultat)
             return data
     return scout.qualify_pool()
 

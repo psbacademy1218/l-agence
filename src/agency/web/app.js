@@ -58,6 +58,11 @@ function renderPipelineSkeleton() {
 /* ---------- prospects ---------- */
 function renderProspects(list) {
   const wrap = $("#prospects"); wrap.innerHTML = "";
+  if (!list || !list.length) {
+    wrap.innerHTML = '<div class="prospect" style="color:var(--faint)">Aucun prospect — '
+      + 'lance une prospection (ville + secteur) ou « Mission sur une URL ».</div>';
+    return;
+  }
   list.forEach(p => {
     const d = document.createElement("div");
     d.className = "prospect";
