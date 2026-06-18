@@ -16,7 +16,7 @@ générer le CSS, le Copywriter pour caler le ton).
 """
 from __future__ import annotations
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
 
@@ -167,6 +167,35 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
     palette = PALETTES[palette_key]
     typo = TYPE_PAIRS[type_key]
 
+    # L'IA choisit la DA la plus juste PARMI les jeux curés (donc toujours valides
+    # et contrastés) et écrit le parti pris. Repli : choix déterministe par graine.
+    ai_statement = None
+    if llm.available():
+        task = (f"Client : {client.get('name')} — {client.get('craft')}"
+                + (f" à {client.get('location')}" if client.get("location") else "") + ".\n"
+                + (f"Positionnement : {run.get('positioning', {}).get('promise')}\n"
+                   if run.get('positioning', {}).get('promise') else "")
+                + f"\nArchétypes disponibles : {', '.join(ARCHETYPES)}.\n"
+                + f"Palettes disponibles : {', '.join(PALETTES)}.\n"
+                + f"Paires typographiques disponibles : {', '.join(TYPE_PAIRS)}.\n\n"
+                + "Choisis l'archétype, la palette et la paire typo les PLUS justes pour cette "
+                  "maison (valeurs EXACTES issues des listes ci-dessus, rien d'autre) et écris "
+                  "un parti pris de direction artistique en 2 phrases, sans cliché.")
+        schema = {"type": "object", "additionalProperties": False, "properties": {
+            "archetype": {"type": "string"}, "palette": {"type": "string"},
+            "typography": {"type": "string"}, "art_direction": {"type": "string"}},
+            "required": ["archetype", "palette", "typography", "art_direction"]}
+        data = llm.agent_json("designer", task, schema)
+        if data:
+            if data.get("archetype") in ARCHETYPES:
+                arch_key = data["archetype"]; archetype = ARCHETYPES[arch_key]
+            if data.get("palette") in PALETTES:
+                palette_key = data["palette"]; palette = PALETTES[palette_key]
+            if data.get("typography") in TYPE_PAIRS:
+                type_key = data["typography"]; typo = TYPE_PAIRS[type_key]
+            if data.get("art_direction"):
+                ai_statement = data["art_direction"]
+
     # Score de distinctivité : on s'interdit le générique.
     distinct = 100
     generic_blues = {"#0d6efd", "#007bff", "#2563eb", "#1d4ed8"}
@@ -176,7 +205,7 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
         distinct -= 40
 
     design = {
-        "art_direction": (
+        "art_direction": ai_statement or (
             f"« {palette['mood'].capitalize()} » — archétype {arch_key} avec {typo['display']} "
             f"en titrage et {typo['body']} en lecture. {archetype['tagline']}"),
         "archetype": arch_key,

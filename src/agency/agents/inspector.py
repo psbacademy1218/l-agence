@@ -9,9 +9,10 @@ est rejeté). Chaque problème est étiqueté avec l'agent à qui renvoyer le tr
 """
 from __future__ import annotations
 
+import json
 import re
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
 
@@ -126,6 +127,38 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
                  if (src / f).exists())
     kb = weight / 1024
     check("poids", kb < 220, 4, f"Poids total {kb:.0f} Ko (< 220 Ko)", "builder")
+
+    # 10) Critique IA anti-générique (une seule passe par mission, droit de veto)
+    if llm.available() and not run.get("qa_ai", {}).get("done"):
+        cp = run.get("copy", {})
+        sample = {
+            "accroche": cp.get("hero", {}).get("headline"),
+            "sous_titre": cp.get("hero", {}).get("sub"),
+            "piliers": [it.get("title") for it in cp.get("savoir_faire", {}).get("items", [])],
+            "prestations": [it.get("title") for it in cp.get("realisations", {}).get("items", [])],
+            "a_propos": cp.get("atelier", {}).get("paragraphs", []),
+        }
+        task = ("Voici le contenu d'un site vitrine pour « "
+                + f"{run.client.get('name')} » ({run.client.get('craft')}).\n\n"
+                + json.dumps(sample, ensure_ascii=False)[:3000]
+                + "\n\nCe contenu est-il VRAIMENT sur-mesure et crédible pour CETTE maison, "
+                  "ou bien générique / interchangeable / « fait par IA » ? Sois exigeant.")
+        schema = {"type": "object", "additionalProperties": False, "properties": {
+            "generic": {"type": "boolean"}, "verdict": {"type": "string"},
+            "fixes": {"type": "array", "items": {"type": "string"}}},
+            "required": ["generic", "verdict", "fixes"]}
+        verdict = llm.agent_json("inspector", task, schema)
+        if verdict:
+            run.put("qa_ai", {"done": True, "generic": bool(verdict.get("generic"))})
+            if verdict.get("generic"):
+                check("ia-anti-generique", False, 8,
+                      "Critique IA : " + (verdict.get("verdict") or "contenu trop générique"),
+                      "copywriter")
+                if verdict.get("fixes"):
+                    run.put("qa_fixes", verdict["fixes"][:4])
+            else:
+                check("ia-anti-generique", True, 2,
+                      "Critique IA : contenu jugé sur-mesure ✓", "copywriter")
 
     # --- Synthèse -------------------------------------------------------- #
     total_w = sum(c["weight"] for c in checks)

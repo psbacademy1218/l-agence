@@ -70,20 +70,17 @@ def _ai_overlay(run: RunState, client: dict, audit: dict, copy: dict) -> bool:
     if positioning.get("promise"):
         ctx.append(f"Positionnement : {positioning['promise']}")
 
-    system = ("Tu es un directeur de création francophone d'une agence web haut de gamme. "
-              "Tu écris un contenu de site vitrine sur-mesure, concret, incarné et crédible "
-              "pour CE client précis. Interdits absolus : « bienvenue sur notre site », "
-              "lorem ipsum, superlatifs creux, jargon, tournures passe-partout. "
-              "Tu réponds uniquement dans le format JSON demandé.")
-    user = ("Rédige le contenu d'un site vitrine pour cette entreprise :\n\n"
+    if research.get("brief"):
+        ctx.append("Recherche marché/local (web) : " + research["brief"])
+    user = ("Rédige le contenu d'un site vitrine sur-mesure pour cette entreprise :\n\n"
             + "\n".join(ctx)
-            + "\n\nContraintes : français, ton juste et chaleureux mais pro ; "
-              "accroche (headline) incarnée et propre à ce client ; titre SEO < 60 caractères ; "
-              "meta description < 155 caractères ; 3 à 4 piliers de savoir-faire (title+body) ; "
+            + "\n\nContraintes : ton juste, chaleureux mais professionnel ; accroche "
+              "(headline) incarnée et propre à ce client (jamais générique) ; titre SEO "
+              "< 60 caractères ; meta description < 155 ; 3 à 4 piliers (title+body) ; "
               "3 prestations concrètes (title+meta+body) ; 2 paragraphes « à propos » ; "
               "3 engagements courts (une phrase chacun).")
 
-    data = llm.generate_json(system, user, _COPY_SCHEMA)
+    data = llm.agent_json("copywriter", user, _COPY_SCHEMA, thinking=True, max_tokens=9000)
     if not data:
         return False
 

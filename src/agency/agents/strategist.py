@@ -7,7 +7,7 @@ l'arborescence du site, les KPIs, et CHOISIT DYNAMIQUEMENT le type de site
 """
 from __future__ import annotations
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
 
@@ -84,6 +84,28 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
                        "Contenu écrit pour ce client précis, pas de texte passe-partout."],
         "values": values,
     }
+    # Enrichissement IA de l'objectif / cible / positionnement (repli : déterministe).
+    if llm.available():
+        research = run.get("strategy_research", {}) or run.get("research", {}) or {}
+        task = (f"Métier : {client.get('craft')}\nZone : {client.get('location')}\n"
+                + (f"Cible : {research.get('persona')}\n" if research.get("persona") else "")
+                + (f"Douleurs : {', '.join(research.get('douleurs', []))}\n" if research.get("douleurs") else "")
+                + "\nRédige, pour le site vitrine de cette entreprise : un objectif business "
+                  "(une phrase, orienté résultat), la cible principale (une phrase) et un "
+                  "positionnement (une phrase, spécifique).")
+        schema = {"type": "object", "additionalProperties": False, "properties": {
+            "objective": {"type": "string"}, "audience_primary": {"type": "string"},
+            "positioning": {"type": "string"}},
+            "required": ["objective", "audience_primary", "positioning"]}
+        data = llm.agent_json("strategist", task, schema)
+        if data:
+            if data.get("objective"):
+                strategy["objective"] = data["objective"]
+            if data.get("audience_primary"):
+                strategy["audience"]["primary"] = data["audience_primary"]
+            if data.get("positioning"):
+                strategy["positioning"] = data["positioning"]
+
     run.put("strategy", strategy)
 
     voice(run, "strategist",

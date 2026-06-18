@@ -11,9 +11,37 @@ court, un seul appel à l'action, ton parlé, pas de jargon ni de superlatifs.
 """
 from __future__ import annotations
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
+
+_RGPD = ("\n\n— — —\nBrouillon généré par l'agent Closer (à relire et envoyer manuellement). "
+         "Vous pouvez vous opposer à toute reprise de contact en répondant « STOP ». "
+         "Coordonnées professionnelles publiques utilisées au titre de l'intérêt légitime "
+         "(RGPD art. 6.1.f).")
+
+
+def _ai_email(client: dict, audit: dict) -> dict | None:
+    if not llm.available():
+        return None
+    contact = client.get("contact", {})
+    first = (contact.get("name", "").split() or [""])[0]
+    task = (f"Prospect : {client.get('name')}\nMétier : {client.get('craft')}\n"
+            f"Ville : {client.get('location')}\nPrénom du contact : {first or '(inconnu)'}\n"
+            f"Problème réel détecté sur son site actuel : {audit.get('headline_problem')}\n\n"
+            "Écris un email de premier contact : un OBJET court et une accroche concrète "
+            "fondée sur ce problème réel, un corps de moins de 150 mots, ton humain et direct, "
+            "UNE seule question/appel à l'action, zéro jargon, zéro superlatif. "
+            "Ne mets pas de mention légale (elle est ajoutée automatiquement).")
+    schema = {"type": "object", "additionalProperties": False,
+              "properties": {"subject": {"type": "string"}, "body": {"type": "string"}},
+              "required": ["subject", "body"]}
+    data = llm.agent_json("closer", task, schema)
+    if not data or not data.get("body"):
+        return None
+    return {"to": contact.get("email"),
+            "subject": data.get("subject", f"Une remarque sur le site de {client.get('name')}"),
+            "body": data["body"].rstrip() + _RGPD}
 
 # Mots/tournures qui sentent le mailing de masse -> pénalité.
 SPAM_MARKERS = [
@@ -97,7 +125,7 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
     audit = run.get("audit", {})
     voice(run, "closer", "je rédige une approche personnelle (brouillon, jamais envoyée)…")
 
-    email = _draft_email(client, audit)
+    email = _ai_email(client, audit) or _draft_email(client, audit)
     score, problems = _humanity_score(email)
 
     slug = utils.slugify(client.get("name", "prospect"))
