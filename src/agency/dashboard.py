@@ -28,7 +28,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from . import personas, state, utils
+from . import llm, personas, state, utils
 from .agents import scout
 from .manager import Manager
 
@@ -189,6 +189,8 @@ class Handler(BaseHTTPRequestHandler):
             if target == adir or adir in target.parents:
                 return self._file(target)
             return self._send(403, "text/plain; charset=utf-8", b"403")
+        if p == "/api/ai":
+            return self._json(self._ai_diag(parse_qs(u.query)))
         if p == "/api/team":
             return self._json(self._team())
         if p == "/api/status":
@@ -222,6 +224,31 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, "text/plain; charset=utf-8", b"404")
 
     # -- données ------------------------------------------------------- #
+    def _ai_diag(self, qs: dict) -> dict:
+        """Diagnostic de l'IA : clé visible ? SDK installé ? appel test ?"""
+        info = {"code_version": "ai-enabled",
+                "key_present": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                "model": llm.MODEL, "available": llm.available()}
+        try:
+            import anthropic  # noqa: F401
+            info["sdk_installed"] = True
+        except Exception as exc:
+            info["sdk_installed"] = False
+            info["sdk_error"] = str(exc)[:200]
+        if qs.get("ping") and info["available"]:
+            try:
+                import anthropic
+                c = anthropic.Anthropic()
+                r = c.messages.create(model=llm.MODEL, max_tokens=50,
+                                      messages=[{"role": "user", "content": "Réponds: OK"}])
+                txt = next((b.text for b in r.content if getattr(b, "type", "") == "text"), "")
+                info["ping_ok"] = True
+                info["ping_text"] = txt[:60]
+            except Exception as exc:
+                info["ping_ok"] = False
+                info["ping_error"] = str(exc)[:300]
+        return info
+
     def _team(self) -> list:
         return [{"key": p.key, "name": p.name, "emoji": p.emoji,
                  "personality": p.personality, "description": p.description,
