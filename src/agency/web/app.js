@@ -82,6 +82,8 @@ function setPill(run, ctrl) {
   if (ctrl.active && running) {
     const p = TEAM_BY[running.name] || { emoji: "", name: running.name };
     cls = "pill--run"; txt = `${p.emoji} ${p.name} en action…`;
+  } else if (ctrl.active && ctrl.command === "prospect") {
+    cls = "pill--run"; txt = "🔭 Prospection en cours…";
   } else if (ctrl.active) { cls = "pill--run"; txt = "● mission en cours…"; }
   else if (run && run.status === "delivered") { cls = "pill--done"; txt = "✓ site livré"; }
   else if (run && run.status === "aborted") { cls = "pill--abort"; txt = "✕ interrompu"; }
@@ -191,9 +193,13 @@ async function tick() {
     setPill(run, ctrl);
     updateAgents(run); updatePipeline(run); updateHub(run, ctrl);
     updateFeed(run); updateDeliverable(data);
-    $("#mission-sub").textContent = run
-      ? `Mission : ${run.client?.name || "?"} — ${run.status}`
-      : "Aucune mission. Lance-en une pour voir l'équipe travailler.";
+    if (ctrl.note) {
+      $("#mission-sub").textContent = ctrl.note;
+    } else {
+      $("#mission-sub").textContent = run
+        ? `Mission : ${run.client?.name || "?"} — ${run.status}`
+        : "Aucune mission. Lance-en une pour voir l'équipe travailler.";
+    }
   } catch (e) { /* serveur occupé : on réessaiera */ }
 }
 

@@ -45,6 +45,14 @@ SECTOR_TAGS = {
     "immobilier": 'office=estate_agent', "dentiste": 'amenity=dentist',
     "vétérinaire": 'amenity=veterinary', "veterinaire": 'amenity=veterinary',
     "hôtel": 'tourism=hotel', "hotel": 'tourism=hotel',
+    "finance": 'office=financial', "banque": 'amenity=bank',
+    "assurance": 'office=insurance', "comptable": 'office=accountant',
+    "expert-comptable": 'office=accountant', "notaire": 'office=notary',
+    "avocat": 'office=lawyer', "architecte": 'office=architect',
+    "agence web": 'office=it', "informatique": 'office=it',
+    "agence de voyage": 'shop=travel_agency', "pharmacie": 'amenity=pharmacy',
+    "bijouterie": 'shop=jewelry', "tatoueur": 'shop=tattoo',
+    "salle de sport": 'leisure=fitness_centre', "auto-école": 'amenity=driving_school',
 }
 SECTOR_LABEL = {
     'shop=bakery': ("boulangerie", "commerce de bouche"),
@@ -65,6 +73,19 @@ SECTOR_LABEL = {
     'amenity=dentist': ("cabinet dentaire", "santé"),
     'amenity=veterinary': ("cabinet vétérinaire", "santé"),
     'tourism=hotel': ("hôtel", "hôtellerie"),
+    'office=financial': ("société financière", "finance"),
+    'amenity=bank': ("banque / agence bancaire", "finance"),
+    'office=insurance': ("agence d'assurance", "finance"),
+    'office=accountant': ("cabinet comptable", "services professionnels"),
+    'office=notary': ("office notarial", "services professionnels"),
+    'office=architect': ("cabinet d'architecte", "services professionnels"),
+    'office=it': ("agence web / informatique", "services professionnels"),
+    'shop=travel_agency': ("agence de voyage", "tourisme"),
+    'amenity=pharmacy': ("pharmacie", "santé"),
+    'shop=jewelry': ("bijouterie", "commerce de détail"),
+    'shop=tattoo': ("salon de tatouage", "beauté & bien-être"),
+    'leisure=fitness_centre': ("salle de sport", "sport & loisirs"),
+    'amenity=driving_school': ("auto-école", "services"),
 }
 
 
@@ -216,29 +237,30 @@ def _extract_content(html: str) -> dict:
 # --------------------------------------------------------------------------- #
 # DÉCOUVERTE RÉELLE (OpenStreetMap / Overpass)
 # --------------------------------------------------------------------------- #
-def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
-    tag = SECTOR_TAGS.get((sector or "").strip().lower())
-    if not tag:
-        tag = 'shop=bakery'  # repli raisonnable
-    craft, industry = SECTOR_LABEL.get(tag, (sector or "commerce", "commerce de détail"))
-    query = (
-        f'[out:json][timeout:25];'
-        f'area["name"="{city}"]["boundary"="administrative"]->.a;'
-        f'( nwr[{tag}]["website"](area.a); nwr[{tag}]["contact:website"](area.a); );'
-        f'out tags center {limit * 3};')
+def _overpass(query: str) -> list:
     data = urllib.parse.urlencode({"data": query}).encode()
-    elements = []
     for ep in OVERPASS:
         try:
             req = urllib.request.Request(ep, data=data,
                                          headers={"User-Agent": UA, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=30) as r:
-                elements = json.loads(r.read()).get("elements", [])
-            if elements:
-                break
+                els = json.loads(r.read()).get("elements", [])
+            if els:
+                return els
         except Exception:
             continue
+    return []
 
+
+def _craft_from_tags(t: dict) -> str:
+    for k in ("craft", "shop", "office", "amenity", "leisure", "tourism"):
+        v = t.get(k)
+        if v and v != "yes":
+            return v.replace("_", " ")
+    return "entreprise locale"
+
+
+def _build(elements: list, city: str, craft, industry, limit: int) -> list[dict]:
     out, seen = [], set()
     for el in elements:
         t = el.get("tags", {})
@@ -247,20 +269,42 @@ def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
         if not site or not name:
             continue
         host = urllib.parse.urlsplit(_normalize(site)).netloc.replace("www.", "")
-        if host in seen:
+        if not host or host in seen:
             continue
         seen.add(host)
         addr = " ".join(filter(None, [t.get("addr:housenumber"), t.get("addr:street")]))
         out.append({
-            "name": name, "url": site, "industry": industry, "craft": craft,
+            "name": name, "url": site,
+            "industry": industry or "entreprise",
+            "craft": craft or _craft_from_tags(t),
             "location": f"{addr+', ' if addr else ''}{city}".strip(", "),
             "contact": {"name": "", "role": "", "email": t.get("contact:email") or t.get("email", "")},
-            "values": [], "about": t.get("description", ""),
-            "signals": {},
+            "values": [], "about": t.get("description", ""), "signals": {},
         })
         if len(out) >= limit:
             break
     return out
+
+
+def discover(city: str, sector: str, limit: int = 12) -> list[dict]:
+    s = (sector or "").strip().lower()
+    tag = SECTOR_TAGS.get(s)
+    if tag:
+        craft, industry = SECTOR_LABEL.get(tag, (sector, "commerce de détail"))
+        q = (f'[out:json][timeout:25];area["name"="{city}"]["boundary"="administrative"]->.a;'
+             f'( nwr[{tag}]["website"](area.a); nwr[{tag}]["contact:website"](area.a); );'
+             f'out tags center {limit * 3};')
+        out = _build(_overpass(q), city, craft, industry, limit)
+        if out:
+            return out
+    # Secteur inconnu OU aucun résultat ciblé : recherche générique (toute
+    # entreprise locale avec site web ; métier déduit par établissement).
+    q = (f'[out:json][timeout:25];area["name"="{city}"]["boundary"="administrative"]->.a;'
+         f'( nwr["shop"]["website"](area.a); nwr["office"]["website"](area.a);'
+         f' nwr["craft"]["website"](area.a); nwr["amenity"]["website"](area.a);'
+         f' nwr["leisure"]["website"](area.a); );'
+         f'out tags center {limit * 5};')
+    return _build(_overpass(q), city, None, sector or "entreprise", limit)
 
 
 # --------------------------------------------------------------------------- #

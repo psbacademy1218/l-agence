@@ -45,11 +45,13 @@ class Controller:
         self.command: str | None = None
         self.current_run_id: str | None = None
         self.error: str | None = None
+        self.note: str | None = None
         self.pace = 0.6
 
     def status(self) -> dict:
         return {"active": self.active, "command": self.command,
-                "current_run_id": self.current_run_id, "error": self.error}
+                "current_run_id": self.current_run_id, "error": self.error,
+                "note": self.note}
 
     def launch(self, command: str, arg=None, pace: float = 0.6) -> tuple[bool, str]:
         with self._lock:
@@ -58,6 +60,7 @@ class Controller:
             self.active = True
             self.command = command
             self.error = None
+            self.note = None
             self.pace = max(0.0, float(pace))
         threading.Thread(target=self._run, args=(command, arg), daemon=True).start()
         return True, f"Mission « {command} » lancée."
@@ -83,10 +86,13 @@ class Controller:
                 # PROSPECTION RÉELLE : ville + secteur via OpenStreetMap + audit live
                 city = (arg or {}).get("city", "").strip()
                 sector = (arg or {}).get("sector", "").strip()
+                self.note = f"Prospection en cours : {sector or 'tous secteurs'} à {city}…"
                 res = scout.qualify_live(city, sector, limit=10)
-                if not res:                       # repli si rien trouvé / hors-ligne
-                    res = scout.qualify_pool()
                 utils.write_json(utils.STATE_DIR / "prospects.json", res)
+                self.note = (f"{len(res)} prospect(s) trouvé(s) à {city}. Choisis-en un ci-dessous."
+                             if res else
+                             f"Aucun prospect (avec site web) trouvé pour « {sector} » à {city}. "
+                             f"Essaie une ville plus grande, un autre secteur, ou « Mission sur une URL ».")
             elif command == "mission_url":
                 # MISSION DIRECTE sur une vraie URL
                 url = arg.get("url") if isinstance(arg, dict) else arg
