@@ -1,0 +1,54 @@
+"""
+🧠 Cerveau IA (Claude) — optionnel, activé par la clé ANTHROPIC_API_KEY.
+
+Quand la clé est présente ET le SDK `anthropic` installé, les agents peuvent
+rédiger un contenu vraiment sur-mesure avec Claude. Sinon, tout retombe
+automatiquement sur le moteur déterministe (le site se construit quand même).
+
+La clé n'est JAMAIS écrite dans le code : elle est lue dans l'environnement
+(local : `setx ANTHROPIC_API_KEY ...` ; en ligne : variable d'env Render).
+Modèle par défaut : claude-opus-4-8 (réglable via AGENCY_LLM_MODEL).
+"""
+from __future__ import annotations
+
+import json
+import os
+
+from . import utils
+
+MODEL = os.environ.get("AGENCY_LLM_MODEL", "claude-opus-4-8")
+
+
+def available() -> bool:
+    """Vrai si une clé est présente et le SDK importable."""
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return False
+    try:
+        import anthropic  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def generate_json(system: str, user: str, schema: dict,
+                  max_tokens: int = 12000) -> dict | None:
+    """Appelle Claude en sortie JSON structurée. Retourne None en cas d'échec."""
+    if not available():
+        return None
+    try:
+        import anthropic
+        client = anthropic.Anthropic()  # clé lue dans l'environnement
+        resp = client.messages.create(
+            model=MODEL,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            thinking={"type": "adaptive"},
+            output_config={"effort": "medium",
+                           "format": {"type": "json_schema", "schema": schema}},
+        )
+        text = next((b.text for b in resp.content if getattr(b, "type", "") == "text"), "")
+        return json.loads(text) if text else None
+    except Exception as exc:  # clé invalide, quota, SDK trop ancien, JSON cassé…
+        utils.say(f"   [IA] indisponible, repli déterministe : {exc}")
+        return None

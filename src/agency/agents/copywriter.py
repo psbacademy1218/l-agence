@@ -14,9 +14,105 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from .. import utils
+from .. import llm, utils
 from ..state import RunState
 from .base import AgentResult, voice
+
+# Schéma de sortie JSON quand l'IA rédige le contenu.
+_COPY_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "meta": {"type": "object", "additionalProperties": False, "properties": {
+            "title": {"type": "string"}, "description": {"type": "string"},
+            "keywords": {"type": "array", "items": {"type": "string"}}},
+            "required": ["title", "description", "keywords"]},
+        "hero": {"type": "object", "additionalProperties": False, "properties": {
+            "eyebrow": {"type": "string"}, "headline": {"type": "string"},
+            "sub": {"type": "string"}}, "required": ["eyebrow", "headline", "sub"]},
+        "pillars": {"type": "array", "items": {"type": "object", "additionalProperties": False,
+            "properties": {"title": {"type": "string"}, "body": {"type": "string"}},
+            "required": ["title", "body"]}},
+        "services": {"type": "array", "items": {"type": "object", "additionalProperties": False,
+            "properties": {"title": {"type": "string"}, "meta": {"type": "string"},
+                           "body": {"type": "string"}}, "required": ["title", "meta", "body"]}},
+        "about": {"type": "array", "items": {"type": "string"}},
+        "engagements": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["meta", "hero", "pillars", "services", "about", "engagements"],
+}
+
+
+def _ai_overlay(run: RunState, client: dict, audit: dict, copy: dict) -> bool:
+    """Réécrit le contenu avec Claude si la clé est dispo. Retourne True si appliqué."""
+    if not llm.available():
+        return False
+    name = client.get("name", "")
+    craft = client.get("craft") or "activité"
+    city = (client.get("location", "") or "").split(",")[-1].strip()
+    ext = audit.get("extracted", {}) or {}
+    research = run.get("research", {}) or {}
+    positioning = run.get("positioning", {}) or {}
+    ctx = [f"Entreprise : {name}", f"Métier : {craft}"]
+    if city:
+        ctx.append(f"Ville : {city}")
+    if client.get("about"):
+        ctx.append(f"Présentation : {client['about']}")
+    if client.get("values"):
+        ctx.append("Valeurs : " + ", ".join(client["values"]))
+    if ext.get("title"):
+        ctx.append(f"Titre du site actuel : {ext['title']}")
+    if ext.get("description"):
+        ctx.append(f"Description actuelle : {ext['description']}")
+    if ext.get("headings"):
+        ctx.append("Rubriques actuelles : " + ", ".join(ext["headings"]))
+    if research.get("douleurs"):
+        ctx.append("Attentes/douleurs clients : " + ", ".join(research["douleurs"]))
+    if positioning.get("promise"):
+        ctx.append(f"Positionnement : {positioning['promise']}")
+
+    system = ("Tu es un directeur de création francophone d'une agence web haut de gamme. "
+              "Tu écris un contenu de site vitrine sur-mesure, concret, incarné et crédible "
+              "pour CE client précis. Interdits absolus : « bienvenue sur notre site », "
+              "lorem ipsum, superlatifs creux, jargon, tournures passe-partout. "
+              "Tu réponds uniquement dans le format JSON demandé.")
+    user = ("Rédige le contenu d'un site vitrine pour cette entreprise :\n\n"
+            + "\n".join(ctx)
+            + "\n\nContraintes : français, ton juste et chaleureux mais pro ; "
+              "accroche (headline) incarnée et propre à ce client ; titre SEO < 60 caractères ; "
+              "meta description < 155 caractères ; 3 à 4 piliers de savoir-faire (title+body) ; "
+              "3 prestations concrètes (title+meta+body) ; 2 paragraphes « à propos » ; "
+              "3 engagements courts (une phrase chacun).")
+
+    data = llm.generate_json(system, user, _COPY_SCHEMA)
+    if not data:
+        return False
+
+    m = data.get("meta", {})
+    if m.get("title"):
+        copy["meta"]["title"] = m["title"][:65]
+    if m.get("description"):
+        copy["meta"]["description"] = m["description"][:158]
+    if m.get("keywords"):
+        copy["meta"]["keywords"] = [k for k in m["keywords"] if k][:8]
+    h = data.get("hero", {})
+    for k in ("eyebrow", "headline", "sub"):
+        if h.get(k):
+            copy["hero"][k] = h[k]
+    if data.get("pillars"):
+        copy["savoir_faire"]["items"] = [{"title": p.get("title", ""), "body": p.get("body", "")}
+                                         for p in data["pillars"][:4] if p.get("title")]
+    if data.get("services"):
+        copy["realisations"]["items"] = [{"title": s.get("title", ""), "meta": s.get("meta", ""),
+                                          "body": s.get("body", "")}
+                                         for s in data["services"][:3] if s.get("title")]
+    if data.get("about"):
+        copy["atelier"]["paragraphs"] = [p for p in data["about"] if p][:3]
+    if data.get("engagements"):
+        pos = run.get("positioning", {}) or {}
+        pos["differentiators"] = [e for e in data["engagements"] if e][:3]
+        run.put("positioning", pos)
+    copy["seo"]["h1"] = copy["hero"]["headline"]
+    return True
 
 # Valeurs connues -> piliers concrets (artisanat / bouche). Repli générique sinon.
 VALUE_PILLARS = {
@@ -223,6 +319,12 @@ def run(run: RunState, attempt: int = 1, issues: list | None = None) -> AgentRes
                    "legal": "Mentions légales"},
         "seo": {"h1": headline if rev > 0 else name_short},
     }
+
+    # Si la clé Claude est présente : on réécrit le contenu sur-mesure par IA.
+    ai_used = _ai_overlay(run, client, audit, copy)
+    if ai_used:
+        voice(run, "copywriter", "contenu rédigé sur-mesure par Claude (IA).")
+
     run.put("copy", copy)
 
     issues_found = []

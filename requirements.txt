@@ -1,9 +1,12 @@
-# Agence digitale autonome — AUCUNE dépendance externe.
-# Tout le moteur tourne sur la bibliothèque standard de Python 3.8+.
-# (Volontaire : portable, installable nulle part, auditable.)
-#
-# Pour brancher de vraies sources (crawl web, envoi d'emails, déploiement cloud),
-# ajoutez ici les libs correspondantes, p. ex. :
-#   requests        # crawl HTTP réel pour le Scout
-#   beautifulsoup4  # analyse du HTML existant
-#   playwright      # mesure de perf / captures
+# Agence digitale autonome
+# ---------------------------------------------------------------------------
+# Le MOTEUR tourne sur la bibliothèque standard de Python 3.8+ (prospection
+# réelle, audit, production, déploiement). La seule dépendance ci-dessous sert
+# au CERVEAU IA OPTIONNEL : si la clé ANTHROPIC_API_KEY est absente, le SDK
+# n'est même pas chargé et tout retombe sur le moteur déterministe.
+
+anthropic            # contenu rédigé par Claude (activé par ANTHROPIC_API_KEY)
+
+# Pour aller plus loin (facultatif) :
+#   beautifulsoup4   # analyse HTML plus fine pour le Scout
+#   playwright       # mesure de perf / captures réelles
