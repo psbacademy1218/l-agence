@@ -1,0 +1,22 @@
+# État de travail généré à l'exécution
+state/runs/
+state/prospects.json
+
+# Brouillons et livrables générés
+outreach/drafts/*.md
+deliverables/*/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Réglages locaux de l'éditeur/agent (non nécessaires au déploiement)
+.claude/settings.local.json
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

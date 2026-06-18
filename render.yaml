@@ -1,0 +1,13 @@
+# Déploiement "1 clic" sur Render (hébergement gratuit).
+# Render lit ce fichier (Blueprint), installe et lance "L'agence" en ligne.
+services:
+  - type: web
+    name: lagence
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python agency.py dashboard"
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mission-control",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["agency.py", "dashboard", "7000", "noopen"],
+      "port": 7000
+    },
+    {
+      "name": "site-atelier-moreau",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "deliverables/atelier-moreau-ebenisterie-d-art/dist"],
+      "port": 8123
+    }
+  ]
+}

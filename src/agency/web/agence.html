@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'agence — votre équipe d'agents IA, du premier contact au site en ligne</title>
+<meta name="description" content="L'agence : une équipe d'agents IA experts, orchestrée par un Manager, qui va de la prospection à la livraison d'un site web sur-mesure. Un agent, une mission.">
+<meta property="og:title" content="L'agence — votre équipe d'agents IA">
+<meta property="og:description" content="De la prospection au site en ligne. Un agent, une mission. Jamais un site qui sent l'IA.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FF9A3D'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/agence.css">
+</head>
+<body>
+<a class="skip-link" href="#equipe">Aller à l'équipe</a>
+
+<nav class="nav"><div class="wrap nav__in">
+  <a class="brand" href="/"><span class="brand__dot">A</span>L'agence</a>
+  <div class="nav__links">
+    <a href="#equipe">L'équipe</a>
+    <a href="#process">Comment ça marche</a>
+    <a href="#catalogue">Tous les agents</a>
+    <a class="btn btn--primary" href="/app">▶ Lancer une mission</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap hero__grid">
+  <div>
+    <span class="badge">✦ Une agence digitale autonome</span>
+    <h1>Une équipe d'agents IA. Un <em>chef d'orchestre</em>.</h1>
+    <p class="hero__sub">De la prospection à la mise en ligne, chaque agent est expert d'une seule mission. Le Manager les coordonne. Vous suivez tout, en direct.</p>
+    <div class="hero__cta">
+      <a class="btn btn--primary btn--lg" href="/app">▶ Voir l'agence en action</a>
+      <a class="btn btn--ghost btn--lg" href="#equipe">Découvrir l'équipe</a>
+    </div>
+    <p class="hero__note">Un agent, une mission. Jamais un site qui sent l'IA.</p>
+  </div>
+  <div class="collage" aria-hidden="true">
+    <div class="collage__tile"><img src="/avatars/manager.png" alt=""><b>🧭 Le Chef d'orchestre</b></div>
+    <div class="collage__tile"><img src="/avatars/designer.png" alt=""><b>🎨 La D.A.</b></div>
+    <div class="collage__tile"><img src="/avatars/scout.png" alt=""><b>🔭 L'Éclaireur</b></div>
+    <div class="collage__tile"><img src="/avatars/builder.png" alt=""><b>💻 L'Artisan</b></div>
+    <div class="collage__tile"><img src="/avatars/inspector.png" alt=""><b>🔎 L'Inspecteur</b></div>
+  </div>
+</div>
+<div class="wrap"><div class="stats">
+  <div class="stat"><b>19</b><span>agents experts</span></div>
+  <div class="stat"><b>8</b><span>pôles de métier</span></div>
+  <div class="stat"><b>1</b><span>chef d'orchestre</span></div>
+  <div class="stat"><b>0</b><span>site générique</span></div>
+</div></div>
+</header>
+
+<section class="section" id="process"><div class="wrap">
+  <div class="section__head reveal">
+    <span class="eyebrow">Comment ça marche</span>
+    <h2>Une mission, neuf experts, zéro friction</h2>
+    <p>Le Manager découpe le projet et passe le relais au bon agent à chaque étape.</p>
+  </div>
+  <div class="flow reveal">
+    <div class="flow__step"><div class="flow__n">01</div><h4>🔭 Détecter</h4><p>L'Éclaireur repère un site daté ou cassé.</p></div>
+    <div class="flow__arrow">→</div>
+    <div class="flow__step"><div class="flow__n">02</div><h4>✉️ Approcher</h4><p>Le Diplomate écrit l'email (brouillon).</p></div>
+    <div class="flow__arrow">→</div>
+    <div class="flow__step"><div class="flow__n">03</div><h4>🎨 Créer</h4><p>Stratège, D.A. et Plume conçoivent.</p></div>
+    <div class="flow__arrow">→</div>
+    <div class="flow__step"><div class="flow__n">04</div><h4>💻 Construire</h4><p>L'Artisan code, l'Inspecteur valide.</p></div>
+    <div class="flow__arrow">→</div>
+    <div class="flow__step"><div class="flow__n">05</div><h4>🚀 Livrer</h4><p>Le Lanceur déploie et vérifie.</p></div>
+  </div>
+</div></section>
+
+<section class="section" id="equipe"><div class="wrap">
+  <div class="section__head reveal">
+    <span class="eyebrow">L'équipe</span>
+    <h2>Faites connaissance avec vos agents</h2>
+    <p>Chacun est le meilleur sur sa mission. Ensemble, ils forment une agence complète.</p>
+  </div>
+  <div id="team"></div>
+</div></section>
+
+<section class="section" id="catalogue"><div class="wrap">
+  <div class="section__head reveal">
+    <span class="eyebrow">Catalogue étendu</span>
+    <h2>Et plus de 30 experts, à la demande</h2>
+    <p>Besoin d'un renfort ? Activez un spécialiste supplémentaire pour n'importe quelle mission.</p>
+  </div>
+  <div id="catalog" class="catalog"></div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="section__head reveal">
+    <span class="eyebrow">La promesse</span>
+    <h2>Jamais un site qui sent l'IA</h2>
+  </div>
+  <div class="usp reveal">
+    <div class="usp__card"><div class="usp__ic">🎨</div><h4>Une direction artistique unique</h4><p>Chaque client a son univers visuel, composé sur-mesure. Le bleu par défaut et les polices génériques sont bannis.</p></div>
+    <div class="usp__card"><div class="usp__ic">🖊️</div><h4>Du contenu écrit pour vous</h4><p>Pas de texte passe-partout, pas de lorem ipsum. On parle de votre métier, avec vos mots.</p></div>
+    <div class="usp__card"><div class="usp__ic">🔎</div><h4>Un inspecteur intraitable</h4><p>Il a un droit de veto : tout rendu générique repart en correction, jusqu'à validation.</p></div>
+    <div class="usp__card"><div class="usp__ic">⚖️</div><h4>Approche respectueuse</h4><p>Les emails de contact sont des brouillons : jamais d'envoi automatique (RGPD).</p></div>
+  </div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="cta reveal">
+    <h2>Prêt à lancer votre première mission ?</h2>
+    <p>Ouvrez la salle de contrôle et regardez l'équipe travailler, en direct, du premier contact au site déployé.</p>
+    <a class="btn btn--primary btn--lg" href="/app">▶ Entrer dans la salle de contrôle</a>
+  </div>
+</div></section>
+
+<footer class="foot"><div class="wrap">
+  L'agence — équipe d'agents IA · interface locale, vos données restent chez vous.
+</div></footer>
+
+<script src="/agence.js" defer></script>
+</body>
+</html>

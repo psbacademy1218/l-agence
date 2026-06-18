@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control — Agence digitale autonome</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23D2823F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Aller au contenu</a>
+
+<header class="topbar">
+  <a class="brand" href="/" title="Retour à L'agence">
+    <span class="logo" aria-hidden="true">🧭</span>
+    <div>
+      <div class="brand__title">L'agence — <span>Mission Control</span></div>
+      <div class="brand__sub" id="mission-sub">Aucune mission. Lance-en une pour voir l'équipe travailler.</div>
+    </div>
+  </a>
+  <div class="controls">
+    <span class="pill pill--idle" id="status-pill">● au repos</span>
+    <label class="pace">cadence
+      <select id="pace" aria-label="Cadence d'exécution">
+        <option value="0.9">lente</option>
+        <option value="0.55" selected>normale</option>
+        <option value="0.2">rapide</option>
+        <option value="0">instantanée</option>
+      </select>
+    </label>
+    <button class="btn btn--primary" data-cmd="demo"><span aria-hidden="true">▶</span> Démo (hors-ligne)</button>
+  </div>
+</header>
+
+<section class="newmission"><div class="nm-row">
+  <form class="nm" id="nm-prospect">
+    <span class="nm__label">🔭 Prospection réelle</span>
+    <input id="nm-city" placeholder="Ville — ex. Metz" autocomplete="off">
+    <input id="nm-sector" placeholder="Secteur — ex. boulangerie" autocomplete="off">
+    <button class="btn" type="submit">Trouver des prospects</button>
+  </form>
+  <form class="nm" id="nm-url">
+    <span class="nm__label">🚀 Mission sur une URL</span>
+    <input id="nm-urlinput" placeholder="https://site-du-client.fr" autocomplete="off">
+    <button class="btn btn--primary" type="submit">Auditer &amp; créer le site</button>
+  </form>
+</div></section>
+
+<section class="hub" id="hub" aria-live="polite">
+  <span class="hub__avatar" aria-hidden="true"><img src="/avatars/manager.png" alt="" onerror="this.style.display='none'"><i>🧭</i></span>
+  <div class="hub__body">
+    <div class="hub__title">Manager — pilote la mission</div>
+    <div class="hub__line" id="hub-line">assigne chaque étape · contrôle la qualité · relance · tranche quand c'est prêt</div>
+  </div>
+  <div class="hub__meta" id="hub-meta">9 agents pilotés</div>
+</section>
+
+<main id="main" class="grid">
+  <section class="col" aria-labelledby="h-team">
+    <h2 id="h-team" class="col__h">L'équipe</h2>
+    <div id="agents" class="agents"></div>
+  </section>
+
+  <section class="col" aria-labelledby="h-pipe">
+    <h2 id="h-pipe" class="col__h">Pipeline de la mission</h2>
+    <ol id="pipeline" class="pipeline"></ol>
+    <h2 class="col__h">Prospects détectés</h2>
+    <div id="prospects" class="prospects"></div>
+  </section>
+
+  <section class="col" aria-labelledby="h-feed">
+    <h2 id="h-feed" class="col__h">Flux d'activité <span class="live-dot" id="live-dot" aria-hidden="true"></span></h2>
+    <div id="feed" class="feed" role="log" aria-live="polite"></div>
+    <div id="deliverable" class="deliverable" hidden></div>
+  </section>
+</main>
+
+<footer class="foot">Agence digitale autonome · interface locale · aucune donnée ne quitte ta machine</footer>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

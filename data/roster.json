@@ -1,0 +1,157 @@
+{
+  "brand": "L'agence",
+  "tagline": "Une équipe d'agents IA. Un chef d'orchestre. Votre site, de la prospection à la mise en ligne.",
+  "promise": "Chaque agent est expert d'une seule mission. Le Manager les coordonne. Vous suivez tout, en direct.",
+  "departments": [
+    {
+      "key": "direction", "label": "Direction", "emoji": "🧭", "color": "#D2823F",
+      "blurb": "Le cerveau de l'opération.",
+      "agents": [
+        { "key": "manager", "name": "Le Chef d'orchestre", "role": "Manager",
+          "mission": "Pilote chaque mission de bout en bout",
+          "expertise": ["Découpe le projet en étapes", "Assigne le bon agent", "Contrôle la qualité", "Gère reprises et imprévus", "Décide quand c'est prêt à livrer"],
+          "personality": "Calme sous pression. Ne livre jamais à moitié.",
+          "pipeline": true }
+      ]
+    },
+    {
+      "key": "acquisition", "label": "Acquisition", "emoji": "🔭", "color": "#1FA98A",
+      "blurb": "Trouver les bons clients, leur parler juste.",
+      "agents": [
+        { "key": "scout", "name": "L'Éclaireur", "role": "Scout · Prospection",
+          "mission": "Repère les entreprises au site daté ou cassé",
+          "expertise": ["Diagnostic technique du site existant", "Score d'opportunité", "Identification du contact", "Qualification du prospect"],
+          "personality": "L'œil qui voit le détail qui cloche en 3 secondes.",
+          "pipeline": true },
+        { "key": "hunter", "name": "Le Chasseur", "role": "Hunter · Ciblage B2B",
+          "mission": "Trouve les bons prospects (ICP, listes ciblées)",
+          "expertise": ["Définition du client idéal (ICP)", "Listes ciblées", "Enrichissement de données"],
+          "personality": "Patient et précis. Ne ramène que du qualifié." },
+        { "key": "closer", "name": "Le Diplomate", "role": "Closer · Outreach",
+          "mission": "Écrit l'email d'approche qui obtient une réponse",
+          "expertise": ["Emails personnalisés et humains", "Un seul appel à l'action", "Conformité RGPD — brouillons uniquement, jamais d'envoi auto"],
+          "personality": "Écrit l'email qu'il aimerait recevoir.",
+          "pipeline": true }
+      ]
+    },
+    {
+      "key": "strategie", "label": "Stratégie", "emoji": "🎯", "color": "#7C5CFF",
+      "blurb": "Savoir où l'on va, et pourquoi.",
+      "agents": [
+        { "key": "strategist", "name": "La Stratège", "role": "Strategist · Cadrage",
+          "mission": "Cadre l'objectif, la cible et l'arborescence",
+          "expertise": ["Objectifs business", "Cible & personas", "Arborescence du site", "Choix du type de site (statique/CMS/e-commerce)"],
+          "personality": "Une stratégie tient en une page, ou elle n'existe pas.",
+          "pipeline": true },
+        { "key": "positionneur", "name": "Le Positionneur", "role": "Brand Strategist",
+          "mission": "Trouve l'angle qui démarque de la concurrence",
+          "expertise": ["Positionnement", "Message clé", "Différenciation"],
+          "personality": "Si tout le monde le dit, ce n'est pas un positionnement." },
+        { "key": "chercheur", "name": "L'Enquêteur", "role": "Customer Research",
+          "mission": "Comprend les vrais clients (recherche, personas)",
+          "expertise": ["Analyse d'avis et d'entretiens", "Jobs-to-be-done", "Verbatims clients"],
+          "personality": "Écoute avant de parler." }
+      ]
+    },
+    {
+      "key": "creation", "label": "Création", "emoji": "🎨", "color": "#E0559B",
+      "blurb": "Une identité unique, jamais un gabarit.",
+      "agents": [
+        { "key": "designer", "name": "La Directrice Artistique", "role": "Designer",
+          "mission": "Crée une direction artistique unique, anti-template",
+          "expertise": ["Palette et typographies sur-mesure", "Archétype de mise en page", "Design system", "Contraste & accessibilité"],
+          "personality": "Allergique au gabarit. Refuse le bleu par défaut.",
+          "pipeline": true },
+        { "key": "copywriter", "name": "La Plume", "role": "Copywriter",
+          "mission": "Écrit un contenu sur-mesure qui sonne juste",
+          "expertise": ["Contenu de marque", "Accroches incarnées", "SEO éditorial", "Zéro lorem ipsum"],
+          "personality": "Un détail vrai vaut dix adjectifs.",
+          "pipeline": true },
+        { "key": "illustrateur", "name": "L'Illustrateur", "role": "Visual Designer",
+          "mission": "Crée les visuels et images de marque",
+          "expertise": ["Illustrations", "Visuels sociaux", "Images génératives", "Pictogrammes"],
+          "personality": "Donne un visage à la marque." }
+      ]
+    },
+    {
+      "key": "production", "label": "Production", "emoji": "💻", "color": "#3C8FE0",
+      "blurb": "Du design au site réel, proprement.",
+      "agents": [
+        { "key": "builder", "name": "L'Artisan du code", "role": "Builder",
+          "mission": "Code le site (statique, Astro ou CMS)",
+          "expertise": ["HTML sémantique", "CSS piloté par tokens", "Accessibilité native", "Performance"],
+          "personality": "Le code que j'aimerais reprendre dans deux ans.",
+          "pipeline": true },
+        { "key": "automatiseur", "name": "L'Automate", "role": "No-code & Intégrations",
+          "mission": "Connecte les outils et automatise les tâches",
+          "expertise": ["Automatisations (n8n, Zapier)", "Intégrations CRM/email", "Workflows"],
+          "personality": "Si c'est répétitif, c'est automatisable." }
+      ]
+    },
+    {
+      "key": "qualite", "label": "Qualité", "emoji": "🔎", "color": "#D9534F",
+      "blurb": "Le garde-fou anti « site fait par IA ».",
+      "agents": [
+        { "key": "inspector", "name": "L'Inspecteur", "role": "QA · Droit de veto",
+          "mission": "Veto sur tout rendu générique ; teste a11y, perfs, liens",
+          "expertise": ["Audit accessibilité (WCAG)", "Performance & liens", "Contraste", "Détection de générique"],
+          "personality": "Un « presque bien » est un « non ».",
+          "pipeline": true },
+        { "key": "relecteur", "name": "Le Correcteur", "role": "Editor",
+          "mission": "Polit chaque mot (relecture, cohérence)",
+          "expertise": ["Relecture", "Cohérence de ton", "Orthographe & style"],
+          "personality": "La virgule compte." }
+      ]
+    },
+    {
+      "key": "croissance", "label": "Croissance", "emoji": "📈", "color": "#5FA92C",
+      "blurb": "Être trouvé, être choisi, revenir.",
+      "agents": [
+        { "key": "optimizer", "name": "L'Optimiseur", "role": "SEO technique",
+          "mission": "Meta, sitemap, données structurées, tracking RGPD",
+          "expertise": ["Balises & Open Graph", "JSON-LD (données structurées)", "sitemap & robots", "Mesure d'audience sans cookie"],
+          "personality": "Que Google comprenne tout du premier coup.",
+          "pipeline": true },
+        { "key": "referenceur", "name": "Le Référenceur", "role": "SEO de contenu",
+          "mission": "SEO de fond : mots-clés, contenu, audit",
+          "expertise": ["Recherche de mots-clés", "Audit SEO", "Maillage interne", "Netlinking"],
+          "personality": "La première page Google, c'est la rue passante." },
+        { "key": "publicitaire", "name": "Le Régisseur", "role": "Publicité (Ads)",
+          "mission": "Campagnes Google & Meta rentables",
+          "expertise": ["Google Ads & Meta", "Ciblage & retargeting", "Suivi du ROAS"],
+          "personality": "Chaque euro doit revenir avec des amis." },
+        { "key": "social", "name": "Le Community", "role": "Social Media",
+          "mission": "Présence sociale et contenu régulier",
+          "expertise": ["Calendrier éditorial", "Formats sociaux", "Engagement & communauté"],
+          "personality": "La régularité bat l'intensité." }
+      ]
+    },
+    {
+      "key": "ops", "label": "Ops", "emoji": "🚀", "color": "#6471B5",
+      "blurb": "Mettre en ligne, sans surprise.",
+      "agents": [
+        { "key": "launcher", "name": "Le Lanceur", "role": "DevOps",
+          "mission": "Build, déploie et vérifie la mise en ligne",
+          "expertise": ["Build & déploiement", "Vérification HTTP réelle", "Hébergement statique ou CMS"],
+          "personality": "Jamais « c'est en ligne » sans l'avoir vérifié.",
+          "pipeline": true }
+      ]
+    }
+  ],
+  "catalog": [
+    { "name": "Le Planneur", "mission": "Plan marketing AARRR sur 90 jours" },
+    { "name": "L'Analyste", "mission": "Tableau de bord & mesure (GA4, events)" },
+    { "name": "L'Optimiseur de conversion", "mission": "CRO : transformer les visiteurs en clients" },
+    { "name": "Le Testeur A/B", "mission": "Expériences et A/B tests" },
+    { "name": "Le Lifecycle", "mission": "Séquences email automatisées" },
+    { "name": "Le SMS", "mission": "Campagnes SMS et rappels" },
+    { "name": "Le Vidéaste", "mission": "Vidéos courtes et montages" },
+    { "name": "L'Attaché de presse", "mission": "Relations presse & RP" },
+    { "name": "Le Parrain", "mission": "Programme de parrainage" },
+    { "name": "Le Concierge", "mission": "Support client réactif" },
+    { "name": "Le Gardien", "mission": "Rétention & lutte anti-churn" },
+    { "name": "Le Tarificateur", "mission": "Stratégie de prix & offres" },
+    { "name": "L'Annuairiste", "mission": "Référencement dans les annuaires" },
+    { "name": "Le Pro du local", "mission": "Fiche Google Business & SEO local" }
+  ]
+}

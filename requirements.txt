@@ -1,0 +1,9 @@
+# Agence digitale autonome — AUCUNE dépendance externe.
+# Tout le moteur tourne sur la bibliothèque standard de Python 3.8+.
+# (Volontaire : portable, installable nulle part, auditable.)
+#
+# Pour brancher de vraies sources (crawl web, envoi d'emails, déploiement cloud),
+# ajoutez ici les libs correspondantes, p. ex. :
+#   requests        # crawl HTTP réel pour le Scout
+#   beautifulsoup4  # analyse du HTML existant
+#   playwright      # mesure de perf / captures
